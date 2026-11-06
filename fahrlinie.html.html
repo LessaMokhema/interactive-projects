@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fahrlinie – draw a circuit, find the fastest line</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06080d;--sf:#0d1119;--ln:#222b3b;--tx:#eef3fb;--mu:#8a96ad;--amb:#4da3ff;--bl:#0166b1;--lb:#81c4ff;--rd:#e7222e;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e8edf5;--sf:#fff;--ln:#c4cfe0;--tx:#0a1424;--mu:#52617c;color-scheme:light}}
+:root[data-theme="dark"]{--bg:#06080d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 15px/1.5 Outfit,system-ui,sans-serif;background-image:repeating-linear-gradient(45deg,transparent 0 3px,color-mix(in srgb,var(--tx) 3%,transparent) 3px 4px)}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px 50px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+h1{font:200 clamp(38px,7vw,78px)/1 Outfit,sans-serif;letter-spacing:.01em;margin:0}
+h1 b{font-weight:600}
+.stripe{display:block;height:4px;width:140px;margin-top:10px;background:linear-gradient(90deg,var(--lb) 0 33%,var(--bl) 33% 66%,var(--rd) 66%);border-radius:4px}
+header p{margin:10px 0 0;color:var(--mu);max-width:58ch}
+.by{color:var(--mu);font-size:14px}
+.main{display:grid;grid-template-columns:1.75fr 1fr;gap:16px;margin-top:20px}
+@media(max-width:940px){.main{grid-template-columns:1fr}}
+.screen{position:relative;background:var(--sf);border-radius:30px;padding:10px;border:1px solid var(--ln);box-shadow:0 0 70px -10px color-mix(in srgb,var(--amb) 45%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--amb) 30%,transparent);transition:box-shadow .5s}
+canvas#cv{width:100%;aspect-ratio:900/560;display:block;border-radius:22px;touch-action:none;cursor:crosshair}
+#hint{position:absolute;left:50%;top:22px;transform:translateX(-50%);background:color-mix(in srgb,var(--bg) 80%,transparent);border:1px solid var(--ln);border-radius:99px;padding:6px 16px;font-size:14px;color:var(--mu);pointer-events:none;white-space:nowrap}
+.bar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 6px 4px;align-items:center}
+button{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:99px;padding:8px 16px;cursor:pointer;transition:.2s}
+button:hover:not(:disabled){border-color:var(--amb)}button:disabled{opacity:.45}
+button[aria-pressed=true]{border-color:var(--amb);color:var(--amb);box-shadow:0 0 14px -4px var(--amb)}
+button.p{background:var(--amb);border-color:var(--amb);color:#02101d;font-weight:600}
+:focus-visible{outline:2px solid var(--amb);outline-offset:2px}
+.sep{width:1px;height:24px;background:var(--ln);margin:0 4px}
+.cluster{background:var(--sf);border:1px solid var(--ln);border-radius:30px;padding:16px}
+#gauge{width:100%;max-width:340px;display:block;margin:0 auto;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--amb) 60%,transparent))}
+#gauge text{fill:var(--tx);text-anchor:middle}
+.sv{font:200 74px Outfit,sans-serif}
+.row{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center;margin-top:8px}
+#gb{width:130px;height:130px}
+.bars div{font-size:13px;color:var(--mu);margin-bottom:10px}.bars i{display:block;height:8px;border-radius:8px;margin-top:4px;width:0;transition:width .08s}
+.tr{background:var(--ln);border-radius:8px;overflow:hidden}
+.st{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:14px}
+.st div{border-top:1px solid var(--ln);padding-top:6px}.st span{display:block;color:var(--mu);font-size:13px}.st strong{font:400 22px Outfit,sans-serif}
+.gain{color:#4dffa6}
+label{font-size:13px;color:var(--mu)}
+input[type=range]{accent-color:var(--amb);width:150px}
+footer{color:var(--mu);font-size:13px;margin-top:22px;max-width:90ch}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div><h1>Fahr<b>linie</b></h1><span class="stripe"></span><p>Draw any circuit with your finger or mouse. Fahrlinie works out the fastest line, calculates the lap time and drives it with real grip and braking physics.</p><p class="by">by Palesa Mokhema</p></div>
+</header>
+<div class="main">
+<section class="screen">
+<canvas id="cv" aria-label="Circuit display. Draw a closed loop to create a new circuit."></canvas>
+<div id="hint">Draw a loop anywhere to build your own circuit</div>
+<div class="bar">
+<button class="p" id="opt">Find fastest line</button>
+<button id="ctr">Centre line</button>
+<span class="sep"></span>
+<button data-pre="flow">Flow</button><button data-pre="hair">Hairpins</button><button data-pre="oval">Oval</button>
+<span class="sep"></span>
+<button id="run" aria-pressed="true">Driving</button><button id="tm">Time ×1</button>
+</div>
+<div class="bar">
+<button data-m="comfort" aria-pressed="false">Comfort</button><button data-m="sport" aria-pressed="true">Sport</button><button data-m="track" aria-pressed="false">Track</button>
+<span class="sep"></span>
+<label>Road grip <input type="range" id="gr" min="55" max="115" value="100" aria-label="Road grip"> <span id="gv">100%</span></label>
+</div>
+</section>
+<aside class="cluster">
+<svg id="gauge" viewBox="0 0 260 260" aria-label="Speedometer">
+<g id="ticks" stroke="var(--mu)" stroke-width="1.5"></g>
+<circle cx="130" cy="130" r="108" fill="none" stroke="var(--ln)" stroke-width="9" stroke-linecap="round" pathLength="360" stroke-dasharray="270 360" transform="rotate(135 130 130)"/>
+<circle id="arc" cx="130" cy="130" r="108" fill="none" stroke="var(--amb)" stroke-width="9" stroke-linecap="round" pathLength="360" stroke-dasharray="0.01 360" transform="rotate(135 130 130)"/>
+<text id="sv" class="sv" x="130" y="142">0</text>
+<text x="130" y="166" style="font-size:14px;fill:var(--mu)">km/h</text>
+<text id="gear" x="130" y="212" style="font-size:22px;font-weight:600">1</text>
+</svg>
+<div class="row">
+<svg id="gb" viewBox="-65 -65 130 130" aria-label="G-force meter"><circle r="20" fill="none" stroke="var(--ln)"/><circle r="40" fill="none" stroke="var(--ln)"/><circle r="60" fill="none" stroke="var(--ln)"/><path d="M-60 0H60M0 -60V60" stroke="var(--ln)"/><circle id="gd" r="7" fill="var(--amb)" style="filter:drop-shadow(0 0 6px var(--amb))"/></svg>
+<div class="bars">
+<div>Throttle<span class="tr" style="display:block;height:8px;margin-top:4px"><i id="th" style="background:var(--lb);margin:0"></i></span></div>
+<div>Brake<span class="tr" style="display:block;height:8px;margin-top:4px"><i id="bk" style="background:var(--rd);margin:0"></i></span></div>
+<div id="gt" style="font-size:20px;color:var(--tx)">0.00 g</div>
+</div>
+</div>
+<div class="st">
+<div><span>Fastest-line lap</span><strong id="t1">–</strong></div>
+<div><span>Centre-line lap</span><strong id="t0">–</strong></div>
+<div><span>Time gained</span><strong id="tg" class="gain">–</strong></div>
+<div><span>Last lap driven</span><strong id="tl">–</strong></div>
+<div><span>Top speed</span><strong id="tp">–</strong></div>
+<div><span>Slowest corner</span><strong id="mn">–</strong></div>
+</div>
+</aside>
+</div>
+<footer>Prototype by Palesa Mokhema. Draw a circuit and Fahrlinie finds the fastest line, calculates the lap time and drives it. The car is modelled as a point mass with a friction circle: cornering speed comes from curvature and grip, and braking and acceleration are limited by whatever grip is left. The fastest line is found by relaxing the path inside the track edges. Circuits and times are simulated.</footer>
+</div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var LW=900,LH=560,TW=24,MPP=.8,G=9.81,NP=300;
+var MODES={comfort:{mu:.85,ae:4.2,vm:55.5,br:.8,amb:'#81c4ff'},sport:{mu:1.1,ae:6.5,vm:69.4,br:.95,amb:'#ff4d5a'},track:{mu:1.5,ae:9,vm:77.8,br:1,amb:'#4da3ff'}};
+var mode='sport',grip=1,C=null,L=null,NR=null,O=null,pr=null,base=null,dirty=true,pts=[],drawing=false,opt=0,optN=0,running=true,tmul=1,off=null;
+var car={s:0,v:0,al:0,lat:0,tl:0,pv:0,trail:[],last:null};
+var PRE={flow:[[150,420],[120,250],[220,110],[420,90],[520,200],[640,120],[780,200],[760,400],[600,470],[420,400],[300,480]],
+hair:[[90,140],[800,140],[830,250],[330,270],[830,340],[800,470],[100,470],[60,300]],
+oval:(function(){var a=[];for(var i=0;i<16;i++){var t=i/16*6.283;a.push([450+340*Math.cos(t),280+200*Math.sin(t)])}return a})()};
+function chaikin(p,it){while(it--){var q=[];for(var i=0;i<p.length;i++){var a=p[i],b=p[(i+1)%p.length];q.push({x:.75*a.x+.25*b.x,y:.75*a.y+.25*b.y},{x:.25*a.x+.75*b.x,y:.25*a.y+.75*b.y})}p=q}return p}
+function resample(p,n){var tot=0,d=[],i;for(i=0;i<p.length;i++){var a=p[i],b=p[(i+1)%p.length];d.push(Math.hypot(b.x-a.x,b.y-a.y));tot+=d[i]}
+var out=[],st=tot/n,acc=0,j=0;for(var k=0;k<n;k++){var tg=k*st;while(acc+d[j]<tg&&j<p.length-1){acc+=d[j];j++}var a2=p[j],b2=p[(j+1)%p.length],f=d[j]?(tg-acc)/d[j]:0;out.push({x:a2.x+(b2.x-a2.x)*f,y:a2.y+(b2.y-a2.y)*f})}return out}
+function profile(P,m){var n=P.length,mu=m.mu*grip*G,ds=[],k=[],sg=[],i,j;
+for(i=0;i<n;i++){var a=P[(i-1+n)%n],b=P[i],c=P[(i+1)%n];ds.push(Math.hypot(c.x-b.x,c.y-b.y)*MPP);
+var ab=Math.hypot(b.x-a.x,b.y-a.y),bc=Math.hypot(c.x-b.x,c.y-b.y),ca=Math.hypot(a.x-c.x,a.y-c.y),cr=(b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);
+k.push(ab*bc*ca>1e-6?2*Math.abs(cr)/(ab*bc*ca)/MPP:0);sg.push(cr>0?1:-1)}
+for(var q=0;q<2;q++){var k2=k.slice();for(i=0;i<n;i++)k[i]=.25*k2[(i-1+n)%n]+.5*k2[i]+.25*k2[(i+1)%n]}
+var v=[];for(i=0;i<n;i++)v.push(Math.min(m.vm,Math.sqrt(mu/Math.max(k[i],1e-3))));
+var r;for(r=0;r<2;r++)for(i=n-1;i>=0;i--){j=(i+1)%n;var vj=v[j],lt=vj*vj*k[j],al=Math.sqrt(Math.max(0,mu*mu-lt*lt))*m.br;v[i]=Math.min(v[i],Math.sqrt(vj*vj+2*al*ds[i]))}
+for(r=0;r<2;r++)for(i=0;i<n;i++){j=(i+1)%n;var vi=v[i],l2=vi*vi*k[i],a2=Math.min(Math.sqrt(Math.max(0,mu*mu-l2*l2)),m.ae*Math.max(0,1-(vi/m.vm)*(vi/m.vm)));v[j]=Math.min(v[j],Math.sqrt(vi*vi+2*a2*ds[i]))}
+var T=0,cum=[0],mx=0,mn=1e9;for(i=0;i<n;i++){j=(i+1)%n;T+=ds[i]/((v[i]+v[j])/2);cum.push(cum[i]+ds[i]);mx=Math.max(mx,v[i]);mn=Math.min(mn,v[i])}
+return{v:v,k:k,sg:sg,ds:ds,cum:cum,T:T,len:cum[n],mx:mx,mn:mn}}
+function build(poly){var P=resample(chaikin(poly,poly.length>60?2:4),NP),n=P.length,i;C=P;NR=[];for(i=0;i<n;i++){var a=P[(i-1+n)%n],b=P[(i+1)%n],tx=b.x-a.x,ty=b.y-a.y,l=Math.hypot(tx,ty)||1;NR.push({x:-ty/l,y:tx/l})}
+O=[];for(i=0;i<n;i++)O.push(0);L=P.map(function(p){return{x:p.x,y:p.y}});car.s=0;car.trail=[];car.last=null;opt=0;$('hint').style.display='none';calc()}
+function calc(){var m=MODES[mode];base=profile(C,m);pr=profile(L,m);dirty=true;stats()}
+function fmt(t){var mm=Math.floor(t/60),s=t-mm*60;return mm+':'+(s<10?'0':'')+s.toFixed(2)}
+function stats(){$('t1').textContent=fmt(pr.T);$('t0').textContent=fmt(base.T);var g=base.T-pr.T;$('tg').textContent=g>.005?'−'+g.toFixed(2)+' s':'–';$('tp').textContent=Math.round(pr.mx*3.6)+' km/h';$('mn').textContent=Math.round(pr.mn*3.6)+' km/h'}
+function optStep(){var n=L.length,hw=TW/2-3,it,i;for(it=0;it<14;it++)for(i=0;i<n;i++){var p=L[(i-1+n)%n],q=L[(i+1)%n],p2=L[(i-2+n)%n],q2=L[(i+2)%n];
+var tx=.7*(p.x+q.x)/2+.3*(p2.x+q2.x)/2-L[i].x,ty=.7*(p.y+q.y)/2+.3*(p2.y+q2.y)/2-L[i].y;
+var d=tx*NR[i].x+ty*NR[i].y;O[i]=Math.max(-hw,Math.min(hw,O[i]+d*.6));L[i].x=C[i].x+NR[i].x*O[i];L[i].y=C[i].y+NR[i].y*O[i]}}
+var cs=getComputedStyle(document.documentElement);function css(n){return cs.getPropertyValue(n).trim()}
+function heat(f){f=Math.max(0,Math.min(1,f));var a=f<.5?[231,34,46]:[110,110,255],b=f<.5?[110,110,255]:[129,196,255],t=f<.5?f*2:(f-.5)*2;return'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')'}
+var cv=$('cv'),cx=cv.getContext('2d'),dpr=Math.min(2,devicePixelRatio||1);cv.width=LW*dpr;cv.height=LH*dpr;
+off=document.createElement('canvas');off.width=cv.width;off.height=cv.height;var ox=off.getContext('2d');
+function path(c,P){c.beginPath();P.forEach(function(p,i){i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y)});c.closePath()}
+function paint(){ox.setTransform(dpr,0,0,dpr,0,0);ox.clearRect(0,0,LW,LH);ox.fillStyle=css('--bg');ox.fillRect(0,0,LW,LH);
+ox.fillStyle=css('--ln');for(var x=15;x<LW;x+=30)for(var y=15;y<LH;y+=30)ox.fillRect(x,y,1.5,1.5);
+if(!C)return;ox.lineJoin='round';path(ox,C);ox.strokeStyle=css('--ln');ox.lineWidth=TW+3;ox.stroke();ox.strokeStyle=css('--sf');ox.lineWidth=TW;ox.stroke();
+ox.setLineDash([6,10]);ox.strokeStyle=css('--mu');ox.lineWidth=1;ox.globalAlpha=.5;ox.stroke();ox.setLineDash([]);ox.globalAlpha=1;
+var n=L.length,vm=MODES[mode].vm;ox.lineCap='round';ox.lineWidth=4;
+for(var i=0;i<n;i++){var j=(i+1)%n;ox.strokeStyle=heat(pr.v[i]/vm);ox.shadowColor=ox.strokeStyle;ox.shadowBlur=8;ox.beginPath();ox.moveTo(L[i].x,L[i].y);ox.lineTo(L[j].x,L[j].y);ox.stroke()}
+ox.shadowBlur=0;var a=C[0],nr=NR[0];ox.strokeStyle=css('--tx');ox.lineWidth=3;ox.setLineDash([4,4]);ox.beginPath();ox.moveTo(a.x-nr.x*TW/2,a.y-nr.y*TW/2);ox.lineTo(a.x+nr.x*TW/2,a.y+nr.y*TW/2);ox.stroke();ox.setLineDash([])}
+function where(s){var c=pr.cum,lo=0,hi=c.length-2;while(lo<hi){var md=(lo+hi+1)>>1;if(c[md]<=s)lo=md;else hi=md-1}var n=L.length,f=pr.ds[lo]?(s-c[lo])/pr.ds[lo]:0,a=L[lo],b=L[(lo+1)%n];return{i:lo,f:f,x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,ang:Math.atan2(b.y-a.y,b.x-a.x)}}
+var last=performance.now(),tk=$('ticks'),th='';for(var q=0;q<=30;q++){var an=(135+q*9)*Math.PI/180,r2=q%5?122:127;th+='<line x1="'+(130+Math.cos(an)*118)+'" y1="'+(130+Math.sin(an)*118)+'" x2="'+(130+Math.cos(an)*(q%5?122:128))+'" y2="'+(130+Math.sin(an)*(q%5?122:128))+'"/>'}tk.innerHTML=th;
+function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;
+if(dirty){paint();dirty=false}
+if(opt){for(var k=0;k<1;k++)optStep();optN++;if(optN%5===0){pr=profile(L,MODES[mode]);dirty=true;stats()}if(optN>=70){opt=0;calc()}}
+cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,LW,LH);cx.drawImage(off,0,0,LW,LH);
+if(C&&running&&!drawing){var w=where(car.s),v=pr.v[w.i]+(pr.v[(w.i+1)%L.length]-pr.v[w.i])*w.f,sd=dt*tmul;
+if(dt>0){car.al+=((v-car.pv)/Math.max(dt*tmul,1e-3)-car.al)*.12}car.pv=v;car.v=v;car.lat=v*v*pr.k[w.i]*pr.sg[w.i];
+car.s+=v*sd;car.tl+=sd;if(car.s>=pr.len){car.s-=pr.len;car.last=car.tl;car.tl=0;$('tl').textContent=fmt(car.last)}
+car.trail.push({x:w.x,y:w.y});if(car.trail.length>50)car.trail.shift();car.pos=w}
+if(C&&car.pos){var T=car.trail;cx.lineCap='round';for(var i=1;i<T.length;i++){cx.globalAlpha=i/T.length*.8;cx.strokeStyle=css('--amb');cx.lineWidth=i/T.length*5;cx.beginPath();cx.moveTo(T[i-1].x,T[i-1].y);cx.lineTo(T[i].x,T[i].y);cx.stroke()}cx.globalAlpha=1;
+var p=car.pos;cx.save();cx.translate(p.x,p.y);cx.rotate(p.ang);cx.shadowColor=css('--amb');cx.shadowBlur=18;cx.fillStyle='#fff';cx.beginPath();cx.roundRect?cx.roundRect(-9,-4.5,18,9,4):cx.rect(-9,-4.5,18,9);cx.fill();cx.shadowBlur=0;cx.fillStyle='#e7222e';cx.fillRect(-9,-3.5,2,7);cx.fillStyle=css('--amb');cx.fillRect(6,-3.5,2.5,2);cx.fillRect(6,1.5,2.5,2);cx.restore()}
+if(drawing&&pts.length>1){cx.strokeStyle=css('--amb');cx.lineWidth=3;cx.shadowColor=css('--amb');cx.shadowBlur=10;cx.beginPath();pts.forEach(function(p,i){i?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y)});cx.stroke();cx.shadowBlur=0}
+var kmh=car.v*3.6;$('sv').textContent=Math.round(kmh);$('arc').setAttribute('stroke-dasharray',Math.max(.01,Math.min(270,kmh/300*270))+' 360');
+$('gear').textContent=kmh<2?'N':Math.min(8,1+Math.floor(kmh/(MODES[mode].vm*3.6/8.2)));
+var gl=car.lat/G,ga=car.al/G;$('gd').setAttribute('cx',Math.max(-58,Math.min(58,-gl/1.6*60)));$('gd').setAttribute('cy',Math.max(-58,Math.min(58,ga/1.6*60)));
+$('th').style.width=Math.max(0,Math.min(100,ga*160))+'%';$('bk').style.width=Math.max(0,Math.min(100,-ga*100))+'%';$('gt').textContent=Math.hypot(gl,ga).toFixed(2)+' g';
+requestAnimationFrame(frame)}
+function pt(e){var r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*LW,y:(e.clientY-r.top)/r.height*LH}}
+cv.addEventListener('pointerdown',function(e){cv.setPointerCapture(e.pointerId);drawing=true;pts=[pt(e)];opt=0;$('hint').style.display='none'});
+cv.addEventListener('pointermove',function(e){if(!drawing)return;var p=pt(e),l=pts[pts.length-1];if(Math.hypot(p.x-l.x,p.y-l.y)>5)pts.push(p)});
+function end(){if(!drawing)return;drawing=false;var len=0;for(var i=1;i<pts.length;i++)len+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);
+if(pts.length<12||len<500){$('hint').textContent='Draw a longer loop to build a circuit';$('hint').style.display='block';return}build(pts)}
+cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+$('opt').onclick=function(){if(!C)return;optN=0;opt=1};
+$('ctr').onclick=function(){if(!C)return;opt=0;for(var i=0;i<L.length;i++){O[i]=0;L[i].x=C[i].x;L[i].y=C[i].y}calc()};
+document.querySelectorAll('[data-pre]').forEach(function(b){b.onclick=function(){build(PRE[b.dataset.pre].map(function(p){return{x:p[0],y:p[1]}}))}});
+document.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(function(x){x.setAttribute('aria-pressed',x===b)});document.documentElement.style.setProperty('--amb',MODES[mode].amb);cs=getComputedStyle(document.documentElement);if(C)calc();else dirty=true}});
+$('gr').oninput=function(){grip=this.value/100;$('gv').textContent=this.value+'%';if(C)calc()};
+$('run').onclick=function(){running=!running;this.setAttribute('aria-pressed',running);this.textContent=running?'Driving':'Paused'};
+$('tm').onclick=function(){tmul=tmul===1?2:tmul===2?4:1;this.textContent='Time ×'+tmul};
+document.documentElement.style.setProperty('--amb',MODES[mode].amb);
+build(PRE.flow.map(function(p){return{x:p[0],y:p[1]}}));
+setTimeout(function(){optN=0;opt=1},1200);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
