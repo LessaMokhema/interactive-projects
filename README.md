@@ -8,26 +8,26 @@ A collection of interactive WebGL/Three.js simulations, algorithm optimization t
 
 ### 1. Rosslyn Twin – Live Production Line Digital Twin
 * **Tech Stack:** JavaScript, Three.js (WebGL), HTML5, CSS3
-* **Live Demo:** [View Rosslyn Twin Simulation](https://lessamokhema.github.io/portfolio/rosslyn-twin.html)
-* **Overview:** Interactive 3D digital twin simulation of a 6-station vehicle manufacturing line (Body Shop, Paint, Assembly, Marriage, Final, Quality).
+* **Live Demo:** [View Rosslyn Twin Simulation](https://lessamokhema.github.io/interactive-projects/rosslyn-twin.html)
+* **Overview:** Interactive 3D digital twin simulation of a 6-station vehicle manufacturing line (Body Shop, Paint, Assembly, Marriage, Final, Quality)[cite: 3].
 * **Key Features:**
-  * Real-time production flow tracking and calculation of cars per hour vs. theoretical throughput ceiling.
-  * Automated bottleneck diagnosis and bottleneck cycle-time reduction algorithm.
-  * Dynamic disruption testing (e.g., supply shortages at Assembly or Paint shop breakdowns).
-  * Custom 3D orbit, pan, and zoom controls.
-*(Note: Built as an independent concept project using synthetic data).*
+  * Real-time production flow tracking and calculation of cars per hour vs. theoretical throughput ceiling[cite: 3].
+  * Automated bottleneck diagnosis and bottleneck cycle-time reduction algorithm[cite: 3].
+  * Dynamic disruption testing (e.g., supply shortages at Assembly or Paint shop breakdowns)[cite: 3].
+  * Custom 3D orbit, pan, and zoom controls[cite: 3].
+*(Note: Built as an independent concept project using synthetic data)[cite: 3].*
 
 ---
 
 ### 2. Fahrlinie – Racing Line & Physics Optimization Tool
 * **Tech Stack:** JavaScript, HTML5 Canvas, HTML5/CSS3
-* **Live Demo:** [View Fahrlinie Circuit Tool](https://lessamokhema.github.io/portfolio/fahrlinie.html)
-* **Overview:** Interactive physics-based tool that calculates optimal racing lines and lap times on user-drawn or preset circuits.
+* **Live Demo:** [View Fahrlinie Circuit Tool](https://lessamokhema.github.io/interactive-projects/fahrlinie.html)
+* **Overview:** Interactive physics-based tool that calculates optimal racing lines and lap times on user-drawn or preset circuits[cite: 4].
 * **Key Features:**
-  * Point-mass vehicle dynamic model utilizing a friction circle for combined braking and lateral grip.
-  * Path relaxation algorithm to relax track vectors inside boundary constraints to determine maximum cornering velocity.
-  * Real-time G-force telemetry, dynamic gear shift calculation, and telemetry visualizations.
-  * Adjustable road grip parameters and drive mode presets (Comfort, Sport, Track).
+  * Point-mass vehicle dynamic model utilizing a friction circle for combined braking and lateral grip[cite: 4].
+  * Path relaxation algorithm to relax track vectors inside boundary constraints to determine maximum cornering velocity[cite: 4].
+  * Real-time G-force telemetry, dynamic gear shift calculation, and telemetry visualizations[cite: 4].
+  * Adjustable road grip parameters and drive mode presets (Comfort, Sport, Track)[cite: 4].
 
 ---
 
@@ -43,7 +43,7 @@ A collection of interactive WebGL/Three.js simulations, algorithm optimization t
 
 * **Virtual CV:** [lessamokhema.github.io/virtual-cv](https://lessamokhema.github.io/virtual-cv/)
 * **GitHub:** [github.com/LessaMokhema](https://github.com/LessaMokhema)
-* **LinkedIn:** [linkedin.com/in/palesa-mokhema-58727920b](https://linkedin.com/in/palesa-mokhema-58727920b)
+* **LinkedIn:** [linkedin.com/in/palesa-mokhema-58727920b](https://www.linkedin.com/in/palesa-mokhema-58727920b)
 
 ---
-*Created and maintained by Palesa Mokhema.*
+*Created and maintained by Palesa Mokhema[cite: 4].*
