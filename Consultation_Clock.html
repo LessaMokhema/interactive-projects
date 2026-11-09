@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consultation Clock, by Palesa Mokhema</title>
+<style>
+:root{--bg:#0e0e0e;--ink:#f6f6f0;--y:#ffd400;--line:#f6f6f0;--card:#171717;--red:#ff4a3d;--grn:#5dff9a;--mute:#a8a89c;--on-y:#0e0e0e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#fff9cf;--ink:#0e0e0e;--y:#0e0e0e;--line:#0e0e0e;--card:#fffdf0;--red:#c4160a;--grn:#0a7a3a;--mute:#4f4f44;--on-y:#ffd400}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Archivo","Helvetica Neue",Arial,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:0 16px 60px}
+.hazard{height:16px;margin:0 -16px 24px;background:repeating-linear-gradient(-45deg,var(--y) 0 18px,var(--bg) 18px 36px)}
+h1{font:900 clamp(44px,10vw,130px)/.84 "Archivo Black","Impact","Arial Black",sans-serif;text-transform:uppercase;margin:0 0 14px;letter-spacing:-.03em}
+h1 span{background:var(--y);color:var(--on-y);padding:0 .12em}
+.by{font:700 13px ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+.lead{max-width:60ch;color:var(--mute);margin:0 0 24px;font-size:16px}
+h2{font:900 24px "Archivo Black",Impact,sans-serif;text-transform:uppercase;margin:0 0 12px}
+.box{border:3px solid var(--line);background:var(--card);padding:16px;margin-bottom:20px;box-shadow:8px 8px 0 var(--y)}
+.mono,input,select,textarea,button{font-family:ui-monospace,"JetBrains Mono",Consolas,monospace}
+.fg{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;align-items:end}
+@media(max-width:820px){.fg{grid-template-columns:1fr 1fr}}
+label{display:block;font:700 11px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+input,select,textarea{width:100%;background:var(--bg);color:var(--ink);border:2px solid var(--line);padding:8px;font-size:13px;border-radius:0}
+textarea{min-height:70px;resize:vertical}
+button{background:var(--y);color:var(--on-y);border:3px solid var(--line);font-weight:800;text-transform:uppercase;font-size:12px;padding:9px 14px;cursor:pointer;letter-spacing:.04em}
+button.o{background:transparent;color:var(--ink)}button.o[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink)}
+:focus-visible{outline:4px solid var(--red);outline-offset:2px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+#tl{position:relative;height:96px;border-top:3px solid var(--line);margin:10px 8px 6px}
+.tick{position:absolute;top:0;width:1px;height:10px;background:var(--line)}
+.tick span{position:absolute;top:12px;left:-14px;font:11px ui-monospace,monospace;color:var(--mute);white-space:nowrap}
+.mk{position:absolute;top:30px;width:16px;height:16px;border:3px solid var(--line);background:var(--y);transform:rotate(45deg) translate(-50%,0);cursor:pointer;padding:0}
+.mk.hot{background:var(--red)}.mk.sel{outline:4px solid var(--ink)}
+.today{position:absolute;left:0;top:-3px;height:96px;border-left:3px solid var(--red);padding-left:5px;font:800 11px ui-monospace,monospace;color:var(--red)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.it{border:3px solid var(--line);background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.it.sel{box-shadow:6px 6px 0 var(--y)}
+.it b{font-size:15px}.it .tag{font:700 11px ui-monospace,monospace;text-transform:uppercase;color:var(--mute)}
+.days{font:900 44px/1 "Archivo Black",Impact,sans-serif}.days.hot{color:var(--red)}.days.ok{color:var(--grn)}
+.row2{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.meter{height:14px;border:3px solid var(--line);margin:8px 0 4px}.meter i{display:block;height:100%;background:var(--y);width:0;transition:width .3s}
+pre{white-space:pre-wrap;background:var(--bg);border:2px dashed var(--line);padding:12px;font:12.5px/1.5 ui-monospace,monospace;max-height:340px;overflow:auto;margin:10px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:820px){.two{grid-template-columns:1fr}}
+.gap{display:grid;gap:10px}
+footer{margin-top:10px;color:var(--mute);font-size:13px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<div class="hazard"></div>
+<div class="by">by Palesa Mokhema</div>
+<h1>Consultation <span>Clock</span></h1>
+<p class="lead">Public comment windows close whether you are ready or not. Track every notice, see what is about to expire, and turn your position into a clean, structured written submission. Your entries stay in this browser only.</p>
+
+<div class="box">
+ <h2>Add a notice</h2>
+ <div class="fg">
+  <div><label for="t">Title</label><input id="t" placeholder="e.g. Licence application, trading"></div>
+  <div><label for="ty">Type</label><select id="ty"><option>Tariff application</option><option>Licence application</option><option>Consultation paper</option><option>Rules or guidelines</option></select></div>
+  <div><label for="dl">Comments close</label><input id="dl" type="date"></div>
+  <div><label for="hr">Hearing (optional)</label><input id="hr" type="date"></div>
+ </div>
+ <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap"><button id="add">Add to clock</button><span class="mono" id="msg" role="status" style="font-size:12px"></span></div>
+</div>
+
+<div class="box">
+ <h2>Next 60 days</h2>
+ <div class="chips" id="chips" role="group" aria-label="Filter by type"></div>
+ <div id="tl" aria-hidden="true"></div>
+ <p class="mono" style="font-size:12px;color:var(--mute);margin:30px 0 0">Red markers close within 7 days. Select a marker or a card to draft a submission.</p>
+</div>
+
+<h2>Open notices</h2>
+<div class="items" id="items" style="margin-bottom:24px"></div>
+
+<div class="box" id="draft">
+ <h2>Submission drafter</h2>
+ <p class="mono" id="who" style="font-size:12px;margin:0 0 12px">Select a notice above.</p>
+ <div class="two">
+  <div class="gap">
+   <div><label for="nm">Your name or organisation</label><input id="nm"></div>
+   <div><label for="ps">Position</label><select id="ps"><option>Support</option><option>Support with conditions</option><option>Oppose</option></select></div>
+   <div><label for="k1">Main concern or point</label><textarea id="k1"></textarea></div>
+   <div><label for="k2">Evidence or reasons</label><textarea id="k2"></textarea></div>
+   <div><label for="k3">Clause-specific comments (one per line: clause: comment)</label><textarea id="k3"></textarea></div>
+   <div><label for="rq">What you are asking the regulator to decide</label><textarea id="rq"></textarea></div>
+  </div>
+  <div>
+   <div class="mono" style="font-size:12px">Completeness</div><div class="meter"><i id="mi"></i></div><div class="mono" id="mt" style="font-size:12px"></div>
+   <pre id="pv" aria-live="polite"></pre>
+   <button id="cp">Copy submission</button>
+  </div>
+ </div>
+</div>
+<footer>Designed and built by <b>Palesa Mokhema</b>. Example entries are placeholders, check official notices for real dates.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const DAY=864e5,TODAY=new Date();TODAY.setHours(0,0,0,0);
+const iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
+const plus=n=>iso(+TODAY+n*DAY);
+const left=s=>Math.round((new Date(s+"T00:00:00")-TODAY)/DAY);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let items=[],sel=null,filter="All";const KEY="consultation-clock-v1";
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+ return[{id:1,t:"Example: electricity trading licence application",ty:"Licence application",dl:plus(5),hr:plus(12)},
+ {id:2,t:"Example: municipal tariff increase proposal",ty:"Tariff application",dl:plus(19),hr:plus(26)},
+ {id:3,t:"Example: methodology consultation paper",ty:"Consultation paper",dl:plus(38),hr:""},
+ {id:4,t:"Example: piped gas pricing guidelines",ty:"Rules or guidelines",dl:plus(51),hr:""}]}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}}
+items=load();
+$("dl").value=plus(30);
+const types=["All","Tariff application","Licence application","Consultation paper","Rules or guidelines"];
+function chips(){$("chips").innerHTML=types.map(t=>`<button class="o" aria-pressed="${filter===t}" data-f="${t}">${t}</button>`).join("")}
+$("chips").onclick=e=>{if(e.target.dataset.f){filter=e.target.dataset.f;render()}};
+function vis(){return items.filter(i=>(filter==="All"||i.ty===filter)&&left(i.dl)>=-3).sort((a,b)=>a.dl.localeCompare(b.dl))}
+function render(){chips();const v=vis();
+ let h='<div class="today">TODAY</div>';
+ for(let d=0;d<=60;d+=10)h+=`<div class="tick" style="left:${d/60*100}%"><span>${d?"+"+d+"d":""}</span></div>`;
+ v.forEach(i=>{const d=left(i.dl);if(d>60||d<0)return;h+=`<button class="mk ${d<=7?"hot":""} ${sel===i.id?"sel":""}" style="left:${d/60*100}%" data-s="${i.id}" aria-label="${esc(i.t)}, closes in ${d} days"></button>`});
+ $("tl").innerHTML=h;
+ $("items").innerHTML=v.length?v.map(i=>{const d=left(i.dl),h2=i.hr?left(i.hr):null;
+  return `<article class="it ${sel===i.id?"sel":""}"><span class="tag">${esc(i.ty)}</span><b>${esc(i.t)}</b>
+  <div class="days ${d<=7?"hot":d>21?"ok":""}">${d<0?"CLOSED":d===0?"TODAY":d+"d"}</div><span class="mono" style="font-size:12px">Comments close ${i.dl}${i.hr?" · Hearing "+i.hr+(h2<0?" (past)":" (in "+h2+"d)"):""}</span>
+  <div class="row2"><button data-s="${i.id}">Draft submission</button><button class="o" data-x="${i.id}">Remove</button></div></article>`}).join(""):'<p class="mono">Nothing open for this filter. Add a notice above.</p>';
+ draft()}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-s],[data-x]");if(!b)return;
+ if(b.dataset.s){sel=+b.dataset.s;render();$("draft").scrollIntoView({behavior:"smooth",block:"start"})}
+ if(b.dataset.x){items=items.filter(i=>i.id!==+b.dataset.x);if(sel===+b.dataset.x)sel=null;save();render()}});
+$("add").onclick=()=>{const t=$("t").value.trim(),dl=$("dl").value;
+ if(!t){$("msg").textContent="Add a title.";return}if(!dl){$("msg").textContent="Pick the closing date.";return}
+ if($("hr").value&&$("hr").value<dl){$("msg").textContent="Hearing is before the comment deadline. Check the notice.";}else $("msg").textContent="Added.";
+ items.push({id:Date.now(),t,ty:$("ty").value,dl,hr:$("hr").value});save();$("t").value="";$("hr").value="";render()};
+function draft(){const it=items.find(i=>i.id===sel);
+ $("who").textContent=it?"Drafting for: "+it.t+" (closes "+it.dl+")":"Select a notice above.";
+ const f={nm:$("nm").value.trim(),k1:$("k1").value.trim(),k2:$("k2").value.trim(),k3:$("k3").value.trim(),rq:$("rq").value.trim()};
+ const done=[!!it,!!f.nm,!!f.k1,!!f.k2,!!f.k3,!!f.rq].filter(Boolean).length,pct=Math.round(done/6*100);
+ $("mi").style.width=pct+"%";const miss=[];if(!f.nm)miss.push("name");if(!f.k1)miss.push("main point");if(!f.k2)miss.push("evidence");if(!f.rq)miss.push("request");
+ $("mt").textContent=pct+"% complete"+(miss.length?". Still missing: "+miss.join(", "):". Ready to send.");
+ const cl=f.k3?f.k3.split("\n").filter(Boolean).map((l,i)=>`  3.${i+1} ${l.trim()}`).join("\n"):"  (none provided)";
+ $("pv").textContent=it?`WRITTEN SUBMISSION
+Re: ${it.t}
+Category: ${it.ty}
+Submitted by: ${f.nm||"[name]"}
+Date: ${iso(TODAY)}
+
+1. POSITION
+${$("ps").value} the proposal as published.
+
+2. SUMMARY OF COMMENTS
+${f.k1||"[main concern]"}
+
+   Supporting reasons: ${f.k2||"[evidence]"}
+
+3. CLAUSE-SPECIFIC COMMENTS
+${cl}
+
+4. REQUEST TO THE REGULATOR
+${f.rq||"[requested decision]"}
+
+${it.hr?"I intend to make an oral presentation at the hearing on "+it.hr+".":"I do not require an oral hearing."}`:"Pick a notice to see the draft."}
+["nm","ps","k1","k2","k3","rq"].forEach(i=>$(i).addEventListener("input",draft));
+$("cp").onclick=async()=>{try{await navigator.clipboard.writeText($("pv").textContent);$("cp").textContent="Copied"}catch(e){$("cp").textContent="Select and copy"}setTimeout(()=>$("cp").textContent="Copy submission",1800)};
+render();
+</script>
+</body>
+</html>
