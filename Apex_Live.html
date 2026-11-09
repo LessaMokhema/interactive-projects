@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apex Live, by Palesa Mokhema</title>
+<style>
+:root{--h:312;--bg:#12072b;--bg2:#2a0b4d;--glass:rgba(255,255,255,.07);--edge:rgba(255,255,255,.18);--ink:#f5eeff;--mute:#b9a6d9;--acc:hsl(var(--h) 100% 68%);--acc2:hsl(calc(var(--h) + 150) 100% 72%);--track:rgba(255,255,255,.14);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#fbf3ff;--bg2:#e6d3ff;--glass:rgba(255,255,255,.7);--edge:rgba(60,20,110,.22);--ink:#25093f;--mute:#5e4682;--acc:hsl(var(--h) 85% 42%);--acc2:hsl(calc(var(--h) + 150) 85% 32%);--track:rgba(60,20,110,.2)}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;color:var(--ink);font:15px/1.5 "Sora","Trebuchet MS",system-ui,sans-serif;
+background:radial-gradient(900px 500px at 85% -10%,var(--bg2),transparent 70%),radial-gradient(700px 500px at -10% 90%,hsl(var(--h) 80% 30% / .45),transparent 70%),var(--bg)}
+main{max-width:1150px;margin:0 auto;padding:22px 16px 50px}
+h1{font:800 clamp(40px,8vw,92px)/.9 "Bebas Neue","Impact","Arial Narrow",sans-serif;letter-spacing:.01em;margin:0 0 10px;font-style:italic;transform:skew(-6deg)}
+h1 span{-webkit-text-stroke:2px var(--acc);color:transparent}
+.lead{max-width:60ch;color:var(--mute);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--glass);border:1px solid var(--edge);border-radius:26px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:14px}
+.stage{position:relative;aspect-ratio:16/10;overflow:hidden}
+canvas{width:100%;height:100%;display:block;border-radius:18px}
+.hud{position:absolute;left:18px;top:14px;display:flex;gap:10px;align-items:center;font-weight:700}
+.pill{padding:4px 12px;border-radius:99px;background:var(--acc);color:#1a0633;font-size:13px}
+.pill.sc{background:#ffd23f}
+#banner{position:absolute;inset:auto 0 18px 0;text-align:center;font:700 22px "Bebas Neue",Impact,sans-serif;letter-spacing:.06em;opacity:0;transition:opacity .4s;text-shadow:0 0 18px var(--acc)}
+#banner.show{opacity:1}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+button{font:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--glass);border:1px solid var(--edge);border-radius:99px;padding:8px 16px;cursor:pointer;transition:transform .15s,background .15s}
+button:hover{transform:translateY(-2px);background:var(--edge)}
+button[aria-pressed="true"]{background:var(--acc);color:#1a0633;border-color:transparent}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
+label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mute)}
+input[type=range]{accent-color:var(--acc)}
+h2{font-size:15px;margin:2px 4px 10px;font-weight:700}
+#board{position:relative;list-style:none;margin:0;padding:0}
+#board li{position:absolute;left:0;right:0;height:52px;display:grid;grid-template-columns:28px 10px 1fr 64px;gap:10px;align-items:center;padding:0 8px;border-radius:14px;transition:transform .6s cubic-bezier(.2,.9,.25,1);background:var(--glass)}
+#board .pos{font:800 20px "Bebas Neue",Impact,sans-serif;text-align:center;color:var(--mute)}
+#board .chip{width:10px;height:34px;border-radius:5px}
+#board .nm{font-weight:600;font-size:14px;min-width:0}
+#board .nm small{display:block;color:var(--mute);font-weight:400;font-size:11px}
+#board .bar{height:5px;border-radius:3px;background:var(--track);margin-top:4px;overflow:hidden}
+#board .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .5s}
+#board .pr{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.note{color:var(--mute);font-size:12.5px;margin:12px 4px 0}
+footer{margin-top:22px;color:var(--mute);font-size:13px}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<main>
+<div style="color:var(--mute);font-size:13px;margin-bottom:6px">by Palesa Mokhema</div>
+<h1>Apex <span>Live</span></h1>
+<p class="lead">A real-time race simulation with live win probabilities, drawn on canvas at the screen’s native resolution. Slow corners, a safety car and a leaderboard that glides as positions change. Every colour on the page comes from one token you can turn.</p>
+<div class="grid">
+ <div>
+  <div class="card stage"><canvas id="cv" role="img" aria-label="Six cars racing around a circuit"></canvas>
+   <div class="hud"><span class="pill" id="lap">Lap 1 / 8</span><span class="pill sc" id="scp" hidden>Safety car</span></div>
+   <div id="banner"></div></div>
+  <div class="ctl">
+   <button id="pause" aria-pressed="false">Pause (space)</button>
+   <button id="sc" aria-pressed="false">Safety car (S)</button>
+   <button id="again">New race</button>
+   <label>Race speed <input id="spd" type="range" min="0.5" max="3" step="0.1" value="1.2"></label>
+   <label>Theme hue <input id="hue" type="range" min="0" max="360" value="312"></label>
+  </div>
+ </div>
+ <div class="card"><h2>Win probability</h2><ol id="board" aria-label="Race leaderboard"></ol>
+  <p class="note">Probability blends current position with each car’s pace over the laps left, so it sharpens as the race runs out.</p></div>
+</div>
+<footer>Designed and built by <b>Palesa Mokhema</b>. Plain HTML, CSS and JavaScript, no libraries, responsive and keyboard friendly.</footer>
+<div class="sr" id="live" aria-live="polite"></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$("cv"),ctx=cv.getContext("2d");
+const LAPS=8,N=720;
+const drivers=[["Nova",  "#ff4fd8"],["Kestrel","#4fe3ff"],["Ember","#ffb13b"],["Volt","#8cff6a"],["Onyx","#c7a6ff"],["Rift","#ff6b6b"]];
+/* track geometry, normalised then scaled on resize */
+const P=[],speedAt=[];
+for(let i=0;i<N;i++){const t=i/N*Math.PI*2;
+ P.push([Math.cos(t)+.3*Math.cos(3*t)+.08*Math.cos(5*t),.62*Math.sin(t)+.2*Math.sin(2*t)-.1*Math.sin(4*t)])}
+for(let i=0;i<N;i++){const a=P[(i+N-6)%N],b=P[i],c=P[(i+6)%N];
+ const a1=Math.atan2(b[1]-a[1],b[0]-a[0]),a2=Math.atan2(c[1]-b[1],c[0]-b[0]);
+ let d=Math.abs(a2-a1);if(d>Math.PI)d=2*Math.PI-d;speedAt.push(1-Math.min(.55,d*9))}
+let W=0,H=0,S=1,ox=0,oy=0,dpr=1;
+function resize(){dpr=window.devicePixelRatio||1;const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;
+ S=Math.min(W/2.9,H/1.75);ox=W/2;oy=H/2;ctx.setTransform(dpr,0,0,dpr,0,0)}
+new ResizeObserver(resize).observe(cv);
+const xy=d=>{const f=((d%N)+N)%N,i=f|0,j=(i+1)%N,u=f-i;return[ox+(P[i][0]*(1-u)+P[j][0]*u)*S,oy+(P[i][1]*(1-u)+P[j][1]*u)*S]};
+
+let cars,t0,sc=false,paused=matchMedia("(prefers-reduced-motion:reduce)").matches,done=false,finishedAt=0;
+function reset(){cars=drivers.map((d,i)=>({name:d[0],col:d[1],d:-i*7,pace:.97+Math.random()*.06,form:0,trail:[],prob:1/6,rank:i,fin:false}));
+ sc=false;done=false;$("sc").setAttribute("aria-pressed","false");$("scp").hidden=true;$("banner").classList.remove("show");buildBoard()}
+const board=$("board");let rows=[];
+function buildBoard(){board.innerHTML="";board.style.height=(52*6+5*6)+"px";
+ rows=cars.map((c,i)=>{const li=document.createElement("li");
+  li.innerHTML=`<span class="pos"></span><span class="chip" style="background:${c.col};box-shadow:0 0 12px ${c.col}"></span><span class="nm">${c.name}<small></small><div class="bar"><i></i></div></span><span class="pr"></span>`;
+  board.appendChild(li);return li})}
+function softmax(a,T){const m=Math.max(...a),e=a.map(x=>Math.exp((x-m)/T)),s=e.reduce((x,y)=>x+y,0);return e.map(x=>x/s)}
+function update(dt){
+ const spd=+$("spd").value;
+ cars.forEach(c=>{if(c.fin)return;
+  c.form+=(Math.random()-.5)*.02;c.form=Math.max(-.03,Math.min(.03,c.form));
+  let v=(c.pace+c.form)*speedAt[Math.floor(((c.d%N)+N)%N)]*(sc?.5:1);
+  c.d+=v*dt*spd*70;
+  if(c.d>=LAPS*N){c.fin=true;c.d=LAPS*N}})
+ const order=[...cars].sort((a,b)=>b.d-a.d);
+ order.forEach((c,i)=>c.rank=i);
+ const lapsF=order[0].d/N,left=Math.max(0,LAPS-lapsF);
+ const pr=softmax(cars.map(c=>c.d/N+(c.pace+c.form-1)*left*14),.12+left*.05);
+ cars.forEach((c,i)=>c.prob=pr[i]);
+ if(!done&&order[0].fin){done=true;finishedAt=performance.now();
+  $("banner").textContent=order[0].name+" wins the race";$("banner").classList.add("show");$("live").textContent=order[0].name+" wins";}
+ if(done&&performance.now()-finishedAt>5000){reset()}
+ $("lap").textContent="Lap "+Math.min(LAPS,Math.floor(lapsF)+1)+" / "+LAPS}
+function paintBoard(){
+ const lead=cars.reduce((a,b)=>b.d>a.d?b:a);
+ cars.forEach((c,i)=>{const li=rows[i];li.style.transform=`translateY(${c.rank*57}px)`;
+  li.children[0].textContent=c.rank+1;
+  li.querySelector("small").textContent=c.rank===0?"Leader":"+"+((lead.d-c.d)/N*80).toFixed(1)+" s";
+  li.querySelector("i").style.width=(c.prob*100)+"%";
+  li.querySelector(".pr").textContent=(c.prob*100).toFixed(0)+"%"})}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const path=()=>{ctx.beginPath();P.forEach((p,i)=>{const x=ox+p[0]*S,y=oy+p[1]*S;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath()};
+ const st=getComputedStyle(document.documentElement);
+ ctx.lineJoin="round";path();ctx.strokeStyle=st.getPropertyValue("--track");ctx.lineWidth=S*.1;ctx.stroke();
+ path();ctx.strokeStyle="rgba(255,255,255,.28)";ctx.setLineDash([S*.03,S*.05]);ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);
+ const[sx,sy]=xy(0);ctx.fillStyle="#fff";ctx.fillRect(sx-2,sy-S*.06,4,S*.12);
+ ctx.globalCompositeOperation="lighter";
+ cars.forEach(c=>{const[x,y]=xy(c.d);c.trail.push([x,y]);if(c.trail.length>26)c.trail.shift();
+  c.trail.forEach((p,i)=>{const a=i/c.trail.length;ctx.beginPath();ctx.fillStyle=c.col;ctx.globalAlpha=a*.35;ctx.arc(p[0],p[1],2+a*5,0,7);ctx.fill()});
+  ctx.globalAlpha=1;const g=ctx.createRadialGradient(x,y,0,x,y,16);g.addColorStop(0,c.col);g.addColorStop(1,"transparent");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,16,0,7);ctx.fill()});
+ ctx.globalCompositeOperation="source-over";
+ cars.forEach(c=>{const[x,y]=xy(c.d);ctx.beginPath();ctx.fillStyle="#fff";ctx.arc(x,y,4.5,0,7);ctx.fill();
+  ctx.fillStyle=st.getPropertyValue("--ink");ctx.font="600 11px Sora,system-ui,sans-serif";ctx.fillText(c.name,x+10,y-9)})}
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+ if(!paused&&!done||done)update(paused?0:dt);
+ draw();paintBoard();requestAnimationFrame(loop)}
+function togglePause(){paused=!paused;$("pause").setAttribute("aria-pressed",paused);$("pause").textContent=paused?"Resume (space)":"Pause (space)"}
+function toggleSC(){if(done)return;sc=!sc;$("sc").setAttribute("aria-pressed",sc);$("scp").hidden=!sc;$("live").textContent=sc?"Safety car deployed":"Safety car in, racing resumes"}
+$("pause").onclick=togglePause;$("sc").onclick=toggleSC;$("again").onclick=reset;
+$("hue").oninput=e=>document.documentElement.style.setProperty("--h",e.target.value);
+addEventListener("keydown",e=>{if(e.target.tagName==="INPUT")return;
+ if(e.code==="Space"){e.preventDefault();togglePause()}else if(e.key==="s"||e.key==="S")toggleSC()});
+$("pause").setAttribute("aria-pressed",paused);if(paused)$("pause").textContent="Resume (space)";
+reset();resize();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
