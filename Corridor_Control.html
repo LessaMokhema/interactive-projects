@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Corridor Control, by Palesa Mokhema</title>
+<style>
+:root{--bg:#eef1f4;--card:#fff;--ink:#14212b;--mute:#5d6d7a;--line:#cfd8df;--coal:#2d3640;--ore:#d9561f;--nat:#1766d1;--cape:#0c8f84;--ec:#8a4fd1;--pipe:#d6197c;--ok:#1a9a5b;--warn:#e2a000;--bad:#d92d20;--sea:#dfeaf2;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1620;--card:#122331;--ink:#e8f0f6;--mute:#8ea3b3;--line:#27425a;--coal:#aab6c1;--ore:#ff8a54;--nat:#58a2ff;--cape:#35d0c1;--ec:#b98aff;--pipe:#ff5fb0;--ok:#3ddc97;--warn:#ffcb3d;--bad:#ff6a5c;--sea:#0e1d2a}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "DM Sans","Segoe UI",system-ui,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:22px 16px 56px}
+.by{font:600 12px ui-monospace,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+h1{font:800 clamp(34px,6vw,64px)/1 "DM Sans","Segoe UI",sans-serif;letter-spacing:-.035em;margin:6px 0 8px}
+h1 span{display:inline-block;background:var(--nat);color:#fff;padding:0 .18em;border-radius:.14em}
+.lead{max-width:66ch;color:var(--mute);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;min-width:0}
+h2{font-size:16px;margin:0 0 8px}
+svg{display:block;width:100%;height:auto}
+#map text{font:600 12px "DM Sans",sans-serif;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:4px}
+.cor{fill:none;stroke-width:9;stroke-linecap:round;opacity:.9;cursor:pointer;transition:stroke .3s}
+.cor.sel{stroke-width:13}
+.hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+label{font-size:12px;font-weight:700;color:var(--mute);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+select,input[type=range]{width:100%}
+select{padding:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;font:inherit}
+input[type=range]{accent-color:var(--nat)}
+.f{margin-bottom:12px}
+button{font:inherit;font-weight:700;background:var(--nat);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
+button.g{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,select:focus-visible,input:focus-visible,.cor:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:700px){.kpis{grid-template-columns:1fr 1fr}}
+.k{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.k b{display:block;font-size:28px;line-height:1.1;letter-spacing:-.02em}.k span{font-size:12px;color:var(--mute)}
+.k.bad b{color:var(--bad)}.k.ok b{color:var(--ok)}
+.small{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.sm{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--bg)}
+.sm h3{font-size:13px;margin:0 0 2px;display:flex;align-items:center;gap:6px}.sm h3 i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.sm p{margin:2px 0 0;font-size:12px;color:var(--mute)}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font:12px/1.5 ui-monospace,Consolas,monospace;max-height:230px;overflow:auto;margin:8px 0}
+.log{font-size:13px;margin:0;padding-left:18px}.log li{margin:3px 0}
+footer{margin-top:20px;color:var(--mute);font-size:13px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<div class="by">by Palesa Mokhema</div>
+<h1>Corridor <span>Control</span></h1>
+<p class="lead">A what-if tool for a freight network built around rail, ports and pipelines. Pick a corridor, trigger a disruption, then scrub through the next 14 days to watch flows fall, recover and ripple into neighbouring corridors. All figures are illustrative round numbers, not operating data.</p>
+
+<div class="grid">
+ <div class="card">
+  <h2>Network map <span style="font-weight:400;color:var(--mute);font-size:13px">select a corridor line</span></h2>
+  <svg id="map" viewBox="0 0 800 500" role="group" aria-label="Freight corridor map">
+   <rect width="800" height="500" rx="12" fill="var(--sea)"/>
+   <path d="M20 40 L300 40 Q420 40 520 70 Q760 90 780 180 L780 480 L20 480Z" fill="var(--card)" opacity=".55"/>
+   <g id="lines"></g><g id="dots"></g><g id="nodes"></g>
+  </svg>
+  <div class="hud"><label for="day" style="margin:0">Day</label><input id="day" type="range" min="0" max="14" value="1" style="flex:1;min-width:140px"><b id="dl" style="min-width:60px">Day 1</b><button class="g" id="play">Play</button></div>
+ </div>
+ <div class="card">
+  <h2>Trigger a disruption</h2>
+  <div class="f"><label for="cor">Corridor</label><select id="cor"></select></div>
+  <div class="f"><label for="ev">Event</label><select id="ev"></select></div>
+  <div class="f"><label for="sev">Flow lost: <span id="sv">60</span>%</label><input id="sev" type="range" min="10" max="100" step="5" value="60"></div>
+  <div class="f"><label for="dur">Duration: <span id="du">4</span> days</label><input id="dur" type="range" min="1" max="10" value="4"></div>
+  <button id="run">Run scenario</button> <button class="g" id="rst">Reset</button>
+  <ul class="log" id="log" aria-live="polite" style="margin-top:12px"></ul>
+ </div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+<div class="card" style="margin-bottom:14px"><h2>Flow against normal, by corridor</h2><div class="small" id="small"></div></div>
+<div class="card"><h2>Incident record</h2><p style="margin:0;color:var(--mute);font-size:13px">The scenario as structured data, ready to hand to another system.</p><pre id="json"></pre><button class="g" id="cp">Copy JSON</button></div>
+<footer>Designed and built by <b>Palesa Mokhema</b>. Independent concept tool using illustrative numbers. Not affiliated with, or built from data owned by, any operator.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id),NS="http://www.w3.org/2000/svg";
+const N={sis:["Sishen",250,175],sal:["Saldanha Bay",90,300],gp:["Gauteng hub",470,150],coal:["Coalfields",590,105],rb:["Richards Bay",715,190],dbn:["Durban",690,305],ct:["Cape Town",150,430],ngq:["Ngqura",500,435]};
+const C=[
+{id:"coal",n:"Coal export line",from:"coal",to:"rb",d:"M590 105 Q690 110 715 190",col:"--coal",mode:"rail",f:140,buf:6,gp:false},
+{id:"ore",n:"Iron ore export line",from:"sis",to:"sal",d:"M250 175 Q120 195 90 300",col:"--ore",mode:"rail",f:165,buf:5,gp:false},
+{id:"nat",n:"Gauteng to Durban containers",from:"gp",to:"dbn",d:"M470 150 Q650 190 690 305",col:"--nat",mode:"rail",f:70,buf:3,gp:true},
+{id:"cape",n:"Gauteng to Cape Town",from:"gp",to:"ct",d:"M470 150 Q290 330 150 430",col:"--cape",mode:"rail",f:35,buf:4,gp:true},
+{id:"ec",n:"Gauteng to Eastern Cape",from:"gp",to:"ngq",d:"M470 150 Q430 300 500 435",col:"--ec",mode:"rail",f:45,buf:4,gp:true},
+{id:"fuel",n:"Durban to Gauteng fuel pipeline",from:"dbn",to:"gp",d:"M690 305 Q560 310 470 150",col:"--pipe",mode:"pipe",f:20,buf:7,gp:false}];
+const EV=[
+{id:"cable",n:"Cable theft and signalling failure",div:"Rail Infrastructure Manager",m:["rail"],ripple:true},
+{id:"loco",n:"Locomotive availability shortfall",div:"Freight Rail and Engineering",m:["rail"],ripple:true},
+{id:"track",n:"Derailment or track damage",div:"Rail Infrastructure Manager",m:["rail"],ripple:false},
+{id:"wx",n:"Port weather closure",div:"National Ports Authority",m:["rail","pipe"],ripple:false},
+{id:"crane",n:"Terminal equipment failure",div:"Port Terminals",m:["rail"],ripple:false},
+{id:"press",n:"Pipeline pressure fault",div:"Pipelines",m:["pipe"],ripple:false}];
+const g=$("lines"),dots=$("dots"),nd=$("nodes");
+C.forEach(c=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",c.d);p.setAttribute("class","cor");p.id="p-"+c.id;p.setAttribute("tabindex","0");p.setAttribute("role","button");p.setAttribute("aria-label",c.n);
+ p.style.stroke="var("+c.col+")";if(c.mode==="pipe")p.style.strokeDasharray="2 14";
+ p.onclick=()=>pick(c.id);p.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick(c.id)}};g.appendChild(p);c.len=p.getTotalLength();c.dots=[];
+ for(let i=0;i<8;i++){const o=document.createElementNS(NS,"circle");o.setAttribute("r",4.5);o.setAttribute("fill","#fff");o.setAttribute("stroke","var(--ink)");o.setAttribute("stroke-width",1.5);dots.appendChild(o);c.dots.push(o)}});
+Object.values(N).forEach(n=>{const k=document.createElementNS(NS,"g");k.innerHTML=`<circle cx="${n[1]}" cy="${n[2]}" r="9" fill="var(--card)" stroke="var(--ink)" stroke-width="3.5"/><text x="${n[1]+14}" y="${n[2]+4}">${n[0]}</text>`;nd.appendChild(k)});
+$("cor").innerHTML=C.map(c=>`<option value="${c.id}">${c.n}</option>`).join("");
+function fillEv(){const c=C.find(x=>x.id===$("cor").value);$("ev").innerHTML=EV.filter(e=>e.m.includes(c.mode)).map(e=>`<option value="${e.id}">${e.n}</option>`).join("")}
+function pick(id){$("cor").value=id;fillEv();hi()}
+function hi(){C.forEach(c=>$("p-"+c.id).classList.toggle("sel",c.id===$("cor").value))}
+$("cor").onchange=()=>{fillEv();hi()};
+$("sev").oninput=()=>$("sv").textContent=$("sev").value;$("dur").oninput=()=>$("du").textContent=$("dur").value;
+const DAYS=14;let res=null;
+function series(c,s,d){const a=[];let back=0;for(let t=0;t<=DAYS;t++){let r=1;
+  if(t<d){r=1-s;back+=s}else if(back>0){const up=Math.min(.15,back);r=1+up;back-=up}a.push(Math.max(0,r))}return a}
+function run(){const c=C.find(x=>x.id===$("cor").value),e=EV.find(x=>x.id===$("ev").value),s=$("sev").value/100,d=+$("dur").value;
+ res={};const log=[];
+ C.forEach(x=>res[x.id]={s:Array(DAYS+1).fill(1),role:"unaffected"});
+ res[c.id]={s:series(c,s,d),role:"primary"};
+ log.push(`<b>${e.div}</b>: ${e.n} on ${c.n}, ${Math.round(s*100)}% flow lost for ${d} day${d>1?"s":""}.`);
+ if(e.ripple&&c.gp){const rd=Math.min(d,3);C.filter(x=>x.gp&&x.id!==c.id).forEach(x=>{res[x.id]={s:series(x,s*.2,rd),role:"ripple"}});
+  log.push("Ripple: shared locomotive and yard capacity at the Gauteng hub trims the other Gauteng rail corridors by "+Math.round(s*20)+"% for "+rd+" days.")}
+ let tot=0,worst=0,aff=0,risk=[];
+ C.forEach(x=>{const r=res[x.id],base=x.f*(DAYS+1),got=r.s.reduce((a,v)=>a+v*x.f,0);r.loss=Math.max(0,base-got);r.def=r.s.reduce((a,v)=>a+Math.max(0,1-v),0);
+  r.rec=r.role==="unaffected"?0:Math.max(0,r.s.length-1-r.s.findIndex((v,i)=>i>0&&v>=1&&r.s.slice(0,i).some(q=>q<1)&&false));
+  let last=0;r.s.forEach((v,i)=>{if(v<.999)last=i});r.rec=r.role==="unaffected"?0:last+1;
+  r.risk=r.def>x.buf;tot+=r.loss;if(r.role!=="unaffected"){aff++;worst=Math.max(worst,r.rec)}if(r.risk)risk.push(x.n)});
+ if(risk.length)log.push("Stock cover exhausted on: "+risk.join(", ")+". Expect vessel or customer delays.");else log.push("Buffer stock covers the loss. No downstream delay expected in this scenario.");
+ $("log").innerHTML=log.map(l=>"<li>"+l+"</li>").join("");
+ $("kpis").innerHTML=`<div class="k ${tot>0?"bad":""}"><b>${Math.round(tot).toLocaleString("en-ZA")}</b><span>kt not moved in 14 days</span></div><div class="k"><b>${aff}</b><span>corridors affected</span></div><div class="k"><b>${worst}d</b><span>until flows are back to normal</span></div><div class="k ${risk.length?"bad":"ok"}"><b>${risk.length?risk.length+" at risk":"Covered"}</b><span>stock cover vs shortfall</span></div>`;
+ $("small").innerHTML=C.map(x=>{const r=res[x.id],W=240,H=70,pts=r.s.map((v,i)=>[i/DAYS*W,H-8-Math.min(v,1.2)/1.2*(H-16)]);
+  const path=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");const by=H-8-1/1.2*(H-16);
+  return `<div class="sm"><h3><i style="background:var(${x.col})"></i>${x.n}</h3><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${x.n} flow over 14 days"><line x1="0" x2="${W}" y1="${by}" y2="${by}" stroke="var(--line)" stroke-dasharray="4 4"/><path d="${path}" fill="none" stroke="var(${r.role==="unaffected"?"--ok":r.role==="ripple"?"--warn":"--bad"})" stroke-width="3"/></svg><p>${r.role==="unaffected"?"Normal":r.role==="primary"?"Disrupted":"Knock-on"} · ${Math.round(r.loss)} kt lost · stock cover ${x.buf} days${r.risk?" · <b style='color:var(--bad)'>exceeded</b>":""}</p></div>`}).join("");
+ $("json").textContent=JSON.stringify({scenario:{corridor:c.id,event:e.id,responsibleDivision:e.div,flowLostPct:Math.round(s*100),durationDays:d},results:C.map(x=>({corridor:x.id,role:res[x.id].role,ktLost:Math.round(res[x.id].loss),daysToRecover:res[x.id].rec,stockCoverExceeded:res[x.id].risk}))},null,2);
+ $("day").value=Math.min(1,d);scrub()}
+function reset(){res=null;$("log").innerHTML="";$("kpis").innerHTML="";$("small").innerHTML="";$("json").textContent="Run a scenario to generate the record.";scrub()}
+let day=1;
+function scrub(){day=+$("day").value;$("dl").textContent="Day "+day;
+ C.forEach(c=>{const r=res?res[c.id].s[day]:1,col=r>=.95?"--"+"ok":r>=.6?"--warn":"--bad";const p=$("p-"+c.id);
+  p.style.stroke=res&&r<.95?"var("+(r>=.6?"--warn":"--bad")+")":"var("+c.col+")";p.style.opacity=.55+Math.min(1,r)*.4;c.r=r;
+  c.dots.forEach((o,i)=>o.style.display=i<Math.max(1,Math.round(Math.min(r,1.15)*8))?"":"none")})}
+$("day").oninput=scrub;
+let playing=false,last=0,ph=0;
+$("play").onclick=()=>{playing=!playing;$("play").textContent=playing?"Pause":"Play"};
+setInterval(()=>{if(playing){let v=(+$("day").value+1);if(v>DAYS)v=0;$("day").value=v;scrub()}},800);
+function anim(t){const dt=(t-last)/1000;last=t;ph+=dt*.12;
+ C.forEach(c=>{const p=$("p-"+c.id),sp=Math.max(.08,c.r??1),n=c.dots.length;
+  c.dots.forEach((o,i)=>{const u=((ph*sp*(c.mode==="pipe"?.7:1)+i/n)%1),q=p.getPointAtLength(u*c.len);o.setAttribute("cx",q.x);o.setAttribute("cy",q.y)})});
+ if(!matchMedia("(prefers-reduced-motion:reduce)").matches)requestAnimationFrame(anim)}
+C.forEach(c=>c.r=1);
+$("run").onclick=run;$("rst").onclick=reset;
+$("cp").onclick=async()=>{try{await navigator.clipboard.writeText($("json").textContent);$("cp").textContent="Copied"}catch(e){$("cp").textContent="Select and copy"}setTimeout(()=>$("cp").textContent="Copy JSON",1800)};
+$("cor").value="nat";fillEv();$("ev").value="cable";hi();run();
+if(matchMedia("(prefers-reduced-motion:reduce)").matches){ph=.05;anim(0);}else requestAnimationFrame(anim);
+</script>
+</body>
+</html>
