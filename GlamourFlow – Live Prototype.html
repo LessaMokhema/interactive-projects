@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GlamourFlow – Salon & Beauty Management</title>
+<style>
+:root{--bg:#fbf5f3;--card:#fff;--ink:#2d2024;--mut:#8a7378;--line:#ecdcd8;--acc:#b8456b;--acc2:#8f2f52;--ok:#2e8b63;--bad:#c0392b;--chip:#f6e3e8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1417;--card:#281d21;--ink:#f5e8eb;--mut:#a8909a;--line:#3d2d33;--acc:#e0698f;--acc2:#c24b72;--ok:#4cc38a;--bad:#ff7a6b;--chip:#3b2630;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1417;--card:#281d21;--ink:#f5e8eb;--mut:#a8909a;--line:#3d2d33;--acc:#e0698f;--acc2:#c24b72;--ok:#4cc38a;--bad:#ff7a6b;--chip:#3b2630;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0;font-weight:600}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.logo{font:600 22px Georgia,serif;color:var(--acc)}
+.sp{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}button.p:hover{background:var(--acc2)}
+button.d{color:var(--bad)}button.s{padding:5px 10px;font-size:13px}
+input,select,textarea{font:inherit;width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
+label{display:block;font-size:12.5px;color:var(--mut);margin:10px 0 4px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:130px}
+.tile{text-align:left;padding:20px;display:block;width:100%}.tile:hover{border-color:var(--acc)}
+.tile b{display:block;font:600 17px Georgia,serif;margin:6px 0 2px}.tile span{color:var(--mut);font-size:13px}.tile i{font-style:normal;font-size:26px}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--mut);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr.sel td{background:var(--chip)}tbody tr[data-id]{cursor:pointer}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;background:var(--chip);font-size:12px}
+.chip.ok{color:var(--ok)}.chip.bad{color:var(--bad)}
+.msg{min-height:20px;margin-top:10px;font-size:13.5px}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.svc{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer}
+.svc input{width:auto}.svc small{color:var(--mut)}
+.tot{display:flex;justify-content:space-between;padding:4px 0}.tot.big{font:600 20px Georgia,serif;border-top:1px solid var(--line);margin-top:6px;padding-top:10px;color:var(--acc)}
+.login{max-width:380px;margin:9vh auto 0;text-align:center}.login h1{font-size:34px;color:var(--acc)}
+.login .card{text-align:left;margin-top:22px}.hint{font-size:12px;color:var(--mut);text-align:center;margin-top:14px}
+.modal{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal .card{max-width:380px;width:100%}
+.note{background:var(--chip);border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--mut);margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const $=s=>document.querySelector(s),money=n=>'R'+Number(n).toFixed(2),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const day=(o,h,m=0)=>{const d=new Date();d.setDate(d.getDate()+o);d.setHours(h,m,0,0);return d};
+// ---- seed data (mirrors GlamourFlowDB.sql, plus two open appointments so payments can be demoed) ----
+const DB={
+clients:[[1,'Thandiwe','Nkosi','0821234567','thandiwe@example.com','1992-04-12',1,''],[2,'Sarah','Botha','0837654321','sarah@example.com','1988-11-02',1,''],[3,'Lindiwe','Dube','0715558899','lindiwe@example.com','1995-07-23',1,''],[4,'Amanda','Pretorius','0824447788','amanda@example.com','1990-01-30',1,'']].map(r=>({id:r[0],first:r[1],last:r[2],phone:r[3],email:r[4],dob:r[5],active:!!r[6],notes:r[7]})),
+services:[[1,'Full Colour Treatment','Hair',650,120],[2,'Ladies Haircut & Blow Dry','Hair',350,60],[3,'Classic Manicure','Nails',180,45],[4,'Gel Manicure','Nails',250,60],[5,'Deep Cleanse Facial','Skin',450,75],[6,"Gentlemen's Haircut",'Hair',200,30]].map(r=>({id:r[0],name:r[1],cat:r[2],price:r[3],dur:r[4],disc:false})),
+staff:[[1,'Naledi','Khumalo','Hair'],[2,'Priya','Naidoo','Nails'],[3,'Michelle','van Wyk','Skin'],[4,'Karabo','Sithole','Hair']].map(r=>({id:r[0],first:r[1],last:r[2],spec:r[3],active:true})),
+appts:[{id:1,client:1,staff:1,date:day(-2,10),status:'Paid',items:[1]},{id:2,client:2,staff:2,date:day(0,8),status:'Completed',items:[4,3]},{id:3,client:3,staff:3,date:day(0,9),status:'In Progress',items:[5]}],
+payments:[{id:1,appt:1,method:'Card',amount:747.5,by:'Admin'}]};
+DB.appts.forEach(a=>a.items=a.items.map(id=>({sid:id,price:DB.services.find(s=>s.id==id).price})));
+const S={user:null,view:'login',sel:null,msg:'',ok:true,booking:{client:'',svcs:[],date:day(1,9).toISOString().slice(0,10),time:'09:00',staffOpts:null,staff:''},pay:{q:'',sel:null,disc:0,method:'Cash',tender:0},modal:null};
+const cname=id=>{const c=DB.clients.find(x=>x.id==id);return c?c.first+' '+c.last:'?'},sname=id=>{const c=DB.staff.find(x=>x.id==id);return c?c.first+' '+c.last:'?'};
+const fmt=d=>d.toLocaleString('en-ZA',{dateStyle:'medium',timeStyle:'short'});
+const go=v=>{S.view=v;S.sel=null;S.msg='';render()},say=(m,ok=true)=>{S.msg=m;S.ok=ok;render()};
+const hdr=t=>`<div class="top"><button onclick="go('menu')">← Menu</button><h2>${t}</h2><div class="sp"></div><span class="chip">${esc(S.user)}</span></div>`;
+const msg=()=>`<div class="msg ${S.ok?'ok':'bad'}">${esc(S.msg)}</div>`;
+function confirmBox(text,yes){S.modal={text,yes};render()}
+// ---- views ----
+const V={
+login:()=>`<div class="login"><h1>GlamourFlow</h1><div style="color:var(--mut)">Salon & Beauty Management System</div>
+<div class="card"><label>Username</label><input id="u" value="Admin" autocomplete="off"><label>Password</label><input id="p" type="password" value="Password123" onkeydown="if(event.key=='Enter')login()">
+<div class="msg bad">${esc(S.msg)}</div><div class="row"><button class="p" onclick="login()">Login</button></div></div>
+<div class="hint">Default credentials: Admin / Password123</div></div>`,
+menu:()=>`<div class="top"><div><div class="logo">GlamourFlow</div><div style="color:var(--mut)">Welcome, ${esc(S.user)}</div></div><div class="sp"></div><button onclick="logout()">Log Out</button></div>
+<div class="grid g2">
+<button class="card tile" onclick="go('clients')"><i>👤</i><b>Manage Clients</b><span>${DB.clients.filter(c=>c.active).length} active clients</span></button>
+<button class="card tile" onclick="go('services')"><i>💅</i><b>Manage Services & Pricing</b><span>${DB.services.filter(c=>!c.disc).length} services on offer</span></button>
+<button class="card tile" onclick="go('book')"><i>📅</i><b>Book & Schedule Appointment</b><span>${DB.appts.filter(a=>a.status=='Scheduled').length} upcoming bookings</span></button>
+<button class="card tile" onclick="go('pay')"><i>💳</i><b>Process Payment & Billing</b><span>${DB.appts.filter(a=>['Completed','In Progress'].includes(a.status)).length} awaiting payment</span></button></div>`,
+clients:()=>{const c=DB.clients.find(x=>x.id==S.sel)||{first:'',last:'',phone:'',email:'',dob:'',notes:'',active:true};
+return hdr('Manage Clients')+`<div class="grid g2"><div class="card tw"><table><thead><tr><th>Name</th><th>Contact</th><th>Email</th><th>Status</th></tr></thead><tbody>
+${[...DB.clients].sort((a,b)=>a.last.localeCompare(b.last)).map(x=>`<tr data-id="${x.id}" class="${x.id==S.sel?'sel':''}" onclick="S.sel=${x.id};S.msg='';render()"><td>${esc(x.last)}, ${esc(x.first)}</td><td>${esc(x.phone)}</td><td>${esc(x.email)}</td><td><span class="chip ${x.active?'ok':'bad'}">${x.active?'Active':'Inactive'}</span></td></tr>`).join('')}</tbody></table></div>
+<div class="card"><h3>${S.sel?'Edit client':'New client'}</h3>
+<div class="row"><div><label>First name *</label><input id="f" value="${esc(c.first)}"></div><div><label>Last name *</label><input id="l" value="${esc(c.last)}"></div></div>
+<div class="row"><div><label>Contact number *</label><input id="ph" value="${esc(c.phone)}"></div><div><label>Email</label><input id="em" value="${esc(c.email)}"></div></div>
+<label>Date of birth (optional)</label><input id="dob" type="date" value="${esc(c.dob)}">
+<label>Notes</label><textarea id="nt" rows="2" maxlength="500">${esc(c.notes)}</textarea>
+<label class="row" style="align-items:center;gap:8px;flex-wrap:nowrap"><input id="ac" type="checkbox" style="width:auto;flex:0" ${c.active?'checked':''}> Active</label>
+${msg()}<div class="row"><button onclick="S.sel=null;S.msg='';render()">New</button><button class="p" onclick="saveClient()">Save</button><button class="d" onclick="deactClient()">Deactivate</button></div></div></div>`},
+services:()=>{const c=DB.services.find(x=>x.id==S.sel)||{name:'',cat:'Hair',price:'',dur:30,disc:false};
+return hdr('Manage Services & Pricing')+`<div class="grid g2"><div class="card tw"><table><thead><tr><th>Service</th><th>Category</th><th>Price</th><th>Mins</th><th></th></tr></thead><tbody>
+${DB.services.map(x=>`<tr data-id="${x.id}" class="${x.id==S.sel?'sel':''}" onclick="S.sel=${x.id};S.msg='';render()"><td>${esc(x.name)}</td><td>${x.cat}</td><td>${money(x.price)}</td><td>${x.dur}</td><td>${x.disc?'<span class="chip bad">Discontinued</span>':''}</td></tr>`).join('')}</tbody></table></div>
+<div class="card"><h3>${S.sel?'Edit service':'New service'}</h3>
+<label>Service name *</label><input id="sn" value="${esc(c.name)}">
+<div class="row"><div><label>Category *</label><select id="sc">${['Hair','Nails','Skin'].map(k=>`<option ${k==c.cat?'selected':''}>${k}</option>`).join('')}</select></div>
+<div><label>Price (R) *</label><input id="sp" type="number" min="0" step="0.01" value="${c.price}"></div><div><label>Duration (min) *</label><input id="sd" type="number" min="1" value="${c.dur}"></div></div>
+${msg()}<div class="row"><button onclick="S.sel=null;S.msg='';render()">New</button><button class="p" onclick="saveSvc()">Save</button><button class="d" onclick="discSvc()">Discontinue</button></div></div></div>`},
+book:()=>{const b=S.booking,sel=b.svcs.map(id=>DB.services.find(s=>s.id==id)),mins=sel.reduce((a,s)=>a+s.dur,0),cost=sel.reduce((a,s)=>a+s.price,0);
+return hdr('Book & Schedule Appointment')+`<div class="grid g2"><div class="card"><label>Client *</label><select id="bc" onchange="S.booking.client=this.value"><option value="">— select client —</option>${DB.clients.filter(c=>c.active).map(c=>`<option value="${c.id}" ${b.client==c.id?'selected':''}>${esc(c.first+' '+c.last)}</option>`).join('')}</select>
+<label>Services *</label>${DB.services.filter(s=>!s.disc).map(s=>`<label class="svc"><input type="checkbox" ${b.svcs.includes(s.id)?'checked':''} onchange="toggleSvc(${s.id})"><div style="flex:1">${esc(s.name)}<br><small>${s.cat} · ${s.dur} min</small></div><b>${money(s.price)}</b></label>`).join('')}</div>
+<div class="card"><div class="row"><div><label>Date</label><input type="date" value="${b.date}" onchange="S.booking.date=this.value;S.booking.staffOpts=null;S.booking.staff=''"></div><div><label>Time</label><input type="time" value="${b.time}" onchange="S.booking.time=this.value;S.booking.staffOpts=null;S.booking.staff=''"></div></div>
+<div class="tot" style="margin-top:12px"><span>Total estimated duration</span><b>${mins} minutes</b></div><div class="tot"><span>Total estimated cost</span><b>${money(cost)}</b></div>
+<button style="margin-top:8px;width:100%" onclick="findStaff()">Find Available Staff</button>
+<label>Staff member *</label><select id="bs" onchange="S.booking.staff=this.value" ${b.staffOpts?'':'disabled'}><option value="">${b.staffOpts?(b.staffOpts.length?'— select staff —':'No staff available'):'Click “Find Available Staff” first'}</option>${(b.staffOpts||[]).map(s=>`<option value="${s.id}" ${b.staff==s.id?'selected':''}>${esc(s.first+' '+s.last)} (${s.spec})</option>`).join('')}</select>
+${msg()}<button class="p" style="width:100%" onclick="bookIt()">Book Appointment</button></div></div>
+<div class="card tw" style="margin-top:14px"><h3 style="margin-bottom:8px">Appointments</h3><table><thead><tr><th>#</th><th>Client</th><th>Staff</th><th>When</th><th>Status</th><th></th></tr></thead><tbody>${[...DB.appts].sort((a,b)=>b.date-a.date).map(a=>`<tr><td>${a.id}</td><td>${esc(cname(a.client))}</td><td>${esc(sname(a.staff))}</td><td>${fmt(a.date)}</td><td><span class="chip">${a.status}</span></td><td>${a.status=='Scheduled'?`<button class="s" onclick="advance(${a.id},'In Progress')">Start</button>`:a.status=='In Progress'?`<button class="s" onclick="advance(${a.id},'Completed')">Complete</button>`:''}${['Scheduled','In Progress'].includes(a.status)?` <button class="s d" onclick="advance(${a.id},'Cancelled')">Cancel</button>`:''}</td></tr>`).join('')}</tbody></table></div>`},
+pay:()=>{const p=S.pay,q=p.q.toLowerCase(),list=DB.appts.filter(a=>['Completed','In Progress'].includes(a.status)&&(!q||cname(a.client).toLowerCase().includes(q)||String(a.id)==q)).sort((a,b)=>b.date-a.date);
+const a=DB.appts.find(x=>x.id==p.sel&&['Completed','In Progress'].includes(x.status)),sub=a?a.items.reduce((t,i)=>t+i.price,0):0,after=Math.max(0,sub-p.disc),vat=Math.round(after*15)/100,due=after+vat,chg=p.tender-due;
+return hdr('Process Payment & Billing')+`<div class="grid g2"><div class="card"><div class="row" style="flex-wrap:nowrap"><input placeholder="Search client name or appointment #" value="${esc(p.q)}" oninput="S.pay.q=this.value;renderKeep(this)"></div>
+<div class="tw"><table style="margin-top:8px"><thead><tr><th>#</th><th>Client</th><th>Staff</th><th>Status</th></tr></thead><tbody>${list.map(x=>`<tr data-id="${x.id}" class="${x.id==p.sel?'sel':''}" onclick="selPay(${x.id})"><td>${x.id}</td><td>${esc(cname(x.client))}</td><td>${esc(sname(x.staff))}</td><td><span class="chip">${x.status}</span></td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--mut)">No completed/in-progress appointments found.</td></tr>'}</tbody></table></div></div>
+<div class="card"><h3>Invoice ${a?'#'+a.id:''}</h3>${a?`<div class="tw"><table><thead><tr><th>Service</th><th>Price</th><th>Qty</th></tr></thead><tbody>${a.items.map(i=>`<tr><td>${esc(DB.services.find(s=>s.id==i.sid).name)}</td><td>${money(i.price)}</td><td>1</td></tr>`).join('')}</tbody></table></div>`:'<div style="color:var(--mut);padding:8px 0">Select an appointment.</div>'}
+<div class="row"><div><label>Discount (R)</label><input type="number" min="0" step="0.01" value="${p.disc}" oninput="S.pay.disc=+this.value||0;renderKeep(this)"></div><div><label>Method</label><select onchange="S.pay.method=this.value;render()">${['Cash','Card','EFT'].map(m=>`<option ${m==p.method?'selected':''}>${m}</option>`).join('')}</select></div></div>
+<div style="margin-top:10px"><div class="tot"><span>Subtotal</span><span>${money(sub)}</span></div><div class="tot"><span>VAT (15%)</span><span>${money(vat)}</span></div><div class="tot big"><span>Total Due</span><span>${money(due)}</span></div></div>
+${p.method=='Cash'?`<label>Amount tendered (R)</label><input type="number" min="0" step="0.01" value="${p.tender}" oninput="S.pay.tender=+this.value||0;renderKeep(this)"><div class="tot"><span>Change due</span><b class="${chg<0?'bad':'ok'}">${money(Math.max(0,chg))}</b></div>`:''}
+${msg()}<button class="p" style="width:100%" onclick="payIt()">Process Payment</button></div></div>`}
+};
+function render(){const m=S.modal;$('#app').innerHTML=V[S.view]()+(m?`<div class="modal"><div class="card"><p>${esc(m.text)}</p><div class="row"><button onclick="S.modal=null;render()">No</button><button class="p" onclick="const y=S.modal.yes;S.modal=null;y()">Yes</button></div></div></div>`:'')}
+function renderKeep(el){const id=el.getAttribute('placeholder')?'q':'x',pos=el.selectionStart,idx=[...document.querySelectorAll('input')].indexOf(el);render();const n=document.querySelectorAll('input')[idx];if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}
+// ---- actions ----
+function login(){const u=$('#u').value.trim(),p=$('#p').value;if(!u||!p){S.msg='Please enter both a username and password.';return render()}
+if(u.toLowerCase()=='admin'&&p=='Password123'){S.user='Admin';go('menu')}else{S.msg='Invalid username or password. Please try again.';render()}}
+function logout(){S.user=null;go('login')}
+function saveClient(){const f=$('#f').value.trim(),l=$('#l').value.trim(),ph=$('#ph').value.trim(),em=$('#em').value.trim();
+if(!f||!l||!ph)return say('First name, last name and contact number are mandatory.',false);
+if(!/^[0-9+\-\s]{7,15}$/.test(ph))return say('Contact number format is invalid.',false);
+if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em))return say('Email format is invalid.',false);
+const d={first:f,last:l,phone:ph,email:em,dob:$('#dob').value,notes:$('#nt').value.trim(),active:$('#ac').checked};
+if(S.sel){Object.assign(DB.clients.find(c=>c.id==S.sel),d);say('Client updated successfully.')}else{const id=Math.max(0,...DB.clients.map(c=>c.id))+1;DB.clients.push({id,...d});S.sel=id;say(`Client saved successfully (ClientID ${id}).`)}}
+function deactClient(){if(!S.sel)return say('Select a client from the grid first.',false);
+confirmBox('Deactivate this client? Historical appointment and payment records will be preserved.',()=>{DB.clients.find(c=>c.id==S.sel).active=false;say('Client deactivated.')})}
+function saveSvc(){const n=$('#sn').value.trim(),c=$('#sc').value,p=+$('#sp').value,d=+$('#sd').value;
+if(!n||!c)return say('Service name and category are mandatory.',false);if(!(p>0))return say('Price must be a positive value.',false);if(!(d>0))return say('Duration must be a positive number of minutes.',false);
+if(DB.services.some(s=>s.name.toLowerCase()==n.toLowerCase()&&s.id!=S.sel))return say('A service with that name already exists.',false);
+if(S.sel){Object.assign(DB.services.find(s=>s.id==S.sel),{name:n,cat:c,price:p,dur:d});say('Service updated successfully.')}else{const id=Math.max(0,...DB.services.map(s=>s.id))+1;DB.services.push({id,name:n,cat:c,price:p,dur:d,disc:false});S.sel=id;say(`Service saved successfully (ServiceID ${id}).`)}}
+function discSvc(){if(!S.sel)return say('Select a service from the grid first.',false);
+confirmBox('Discontinue this service? It will no longer be bookable, but past bookings keep their price.',()=>{DB.services.find(s=>s.id==S.sel).disc=true;say('Service discontinued.')})}
+function toggleSvc(id){const b=S.booking;b.svcs=b.svcs.includes(id)?b.svcs.filter(x=>x!=id):[...b.svcs,id];b.staffOpts=null;b.staff='';render()}
+const apptMins=a=>a.items.length?a.items.reduce((t,i)=>t+DB.services.find(s=>s.id==i.sid).dur,0):30;
+const start=()=>{const b=S.booking;return new Date(b.date+'T'+b.time)};
+const conflict=(sid,st,en)=>DB.appts.some(a=>a.staff==sid&&a.status!='Cancelled'&&a.date<en&&new Date(+a.date+apptMins(a)*6e4)>st);
+function findStaff(){const b=S.booking,sel=b.svcs.map(id=>DB.services.find(s=>s.id==id));if(!sel.length)return say('Select at least one service first.',false);
+const st=start(),en=new Date(+st+sel.reduce((t,s)=>t+s.dur,0)*6e4),cats=new Set(sel.map(s=>s.cat));
+b.staffOpts=DB.staff.filter(s=>s.active&&cats.has(s.spec)&&!conflict(s.id,st,en));b.staff='';
+say(b.staffOpts.length?`${b.staffOpts.length} staff member(s) available for this slot.`:'No staff available for the selected services and time. Try another slot.',!!b.staffOpts.length)}
+function bookIt(){const b=S.booking,sel=b.svcs.map(id=>DB.services.find(s=>s.id==id));
+if(!b.client)return say('Please select an existing client.',false);if(!sel.length)return say('Please select at least one service.',false);
+if(!b.staff)return say("Please click 'Find Available Staff' and select a staff member.",false);
+const st=start();if(isNaN(st)||st<new Date())return say('Appointment date/time must be in the future.',false);
+const en=new Date(+st+sel.reduce((t,s)=>t+s.dur,0)*6e4);if(conflict(+b.staff,st,en))return say('This staff member was just booked for that time. Please choose another slot.',false);
+const id=Math.max(0,...DB.appts.map(a=>a.id))+1;DB.appts.push({id,client:+b.client,staff:+b.staff,date:st,status:'Scheduled',items:sel.map(s=>({sid:s.id,price:s.price}))});
+const cost=sel.reduce((t,s)=>t+s.price,0);S.modal={text:`Booking confirmed! Ref #${id} · ${cname(b.client)} with ${sname(b.staff)} · ${fmt(st)} · Est. ${money(cost)}`,yes:()=>{}};
+b.svcs=[];b.staffOpts=null;b.staff='';say(`Booked! Reference #${id}.`)}
+function advance(id,s){DB.appts.find(a=>a.id==id).status=s;render()}
+function selPay(id){S.pay.sel=id;S.pay.disc=0;S.pay.tender=0;S.msg='';render()}
+function payIt(){const p=S.pay,a=DB.appts.find(x=>x.id==p.sel&&['Completed','In Progress'].includes(x.status));if(!a)return say('Select an appointment from the list first.',false);
+const sub=a.items.reduce((t,i)=>t+i.price,0),after=Math.max(0,sub-p.disc),due=after+Math.round(after*15)/100;
+if(due<=0)return say('Total due must be greater than zero.',false);
+if(p.method=='Cash'&&p.tender<due)return say('Amount tendered must be greater than or equal to the total due for cash payments.',false);
+DB.payments.push({id:DB.payments.length+1,appt:a.id,method:p.method,amount:due,by:S.user});a.status='Paid';
+S.modal={text:`Payment recorded. Appointment #${a.id} · ${p.method} · ${money(due)} · Processed by ${S.user}`,yes:()=>{}};p.sel=null;p.disc=0;p.tender=0;say(`Payment processed for appointment #${a.id}. Total: ${money(due)} (${p.method}).`)}
+render();
+</script>
+</body>
+</html>
